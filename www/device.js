@@ -44,6 +44,10 @@ function Device() {
     this.manufacturer = null;
     this.isVirtual = null;
     this.serial = null;
+   
+    this.isrooted=false;
+    this.freespace=null;
+    this.keyboardthirdparty=null;
 
     var me = this;
 
@@ -59,6 +63,11 @@ function Device() {
             me.cordova = buildLabel;
             me.model = info.model;
             me.isVirtual = info.isVirtual;
+            me.isrooted=info.isrooted;
+            me.keyboardthirdparty=info.keyboard || 'unknown';
+            me.freespace = parseInt(info.freespace);
+            me.nfc_support=info.nfc_support || 'unknown';
+
             me.manufacturer = info.manufacturer || 'unknown';
             me.serial = info.serial || 'unknown';
             channel.onCordovaInfoReady.fire();

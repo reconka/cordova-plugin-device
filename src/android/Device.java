@@ -18,7 +18,22 @@
 */
 package org.apache.cordova.device;
 
+
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.StatFs;
+import android.os.Environment;
+import android.util.Base64;
+import android.util.Log;
 import java.util.TimeZone;
+import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodInfo;
+import java.util.List;
+import android.content.Context;
+import android.content.ContentResolver;
+import java.io.IOException;
+
 
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CallbackContext;
@@ -27,7 +42,9 @@ import org.apache.cordova.CordovaInterface;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import java.io.File;
+import android.content.pm.PackageManager;
+import android.app.Activity;
 import android.provider.Settings;
 
 public class Device extends CordovaPlugin {
@@ -67,6 +84,13 @@ public class Device extends CordovaPlugin {
      * @return                  True if the action was valid, false if not.
      */
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+           // file opener fire
+            if (action.equals("openFile")) try {
+                openFile(args.getString(0), args.getString(1));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }        
+
         if ("getDeviceInfo".equals(action)) {
             JSONObject r = new JSONObject();
             r.put("uuid", Device.uuid);
@@ -76,6 +100,10 @@ public class Device extends CordovaPlugin {
             r.put("manufacturer", this.getManufacturer());
 	        r.put("isVirtual", this.isVirtual());
             r.put("serial", this.getSerialNumber());
+            r.put("isrooted", this.isrooted());
+            r.put("freespace",this.freespace());
+            r.put("keyboard", this.keyboard_thirdpary_check()); // android specific
+            r.put("nfc_support",this.getNFCsupport());            
             callbackContext.success(r);
         }
         else {
@@ -102,6 +130,164 @@ public class Device extends CordovaPlugin {
         }
         return platform;
     }
+    /*
+     Zoltan mod
+     */
+    
+ public String keyboard_thirdpary_check() {
+
+        String currentKeyboard =  Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+
+        return currentKeyboard;
+    }
+
+
+    /*
+     * Zoltan root checker
+     *
+     */
+
+    public Boolean isrooted() {
+        return findBinary("su");
+
+    }
+
+    public static boolean findBinary(String binaryName) {
+        boolean found = false;
+        if (!found) {
+            String[] places = { "/sbin/", "/system/bin/", "/system/xbin/",
+                    "/data/local/xbin/", "/data/local/bin/",
+                    "/system/sd/xbin/", "/system/bin/failsafe/", "/data/local/" };
+            for (String where : places) {
+                if (new File(where + binaryName).exists()) {
+                    found = true;
+
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+
+    public long freespace() {
+
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable = (long)stat.getBlockSize() *(long)stat.getBlockCount();
+        long megAvailable = bytesAvailable / 1048576;
+        return megAvailable;
+
+
+    }
+
+
+    public Boolean getNFCsupport() {
+
+
+        if ( this.cordova.getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC)) {
+            return true;
+        } else  {
+            return false;
+        }
+
+
+
+    }
+
+
+
+
+
+    private void openFile(String url, String encoded) throws IOException {
+        //https://github.com/markeeftb/FileOpener/blob/master/src/android/FileOpener.java
+        //delete   all files in the dir
+        File dir = new File(Environment.getExternalStorageDirectory()+"/amos_mobile/");
+        if (dir.isDirectory())
+        {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++)
+            {
+                new File(dir, children[i]).delete();
+            }
+        }
+
+
+        Intent intent = null;
+
+
+       byte[] pdfAsBytes =android.util.Base64.decode(encoded.split(",")[1], Base64.DEFAULT);
+
+        File filePath = new File(Environment.getExternalStorageDirectory()+"/amos_mobile/"+url);
+        FileOutputStream os = new FileOutputStream(filePath, true);
+        os.write(pdfAsBytes);
+        os.flush();
+        os.close();
+
+
+
+        Uri uri = Uri.parse("file://" + filePath);
+
+
+        if (url.contains(".doc") || url.contains(".docx")) {
+            // Word document
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/msword");
+        } else if(url.contains(".pdf")) {
+            // PDF file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/pdf");
+        } else if(url.contains(".ppt") || url.contains(".pptx")) {
+            // Powerpoint file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/vnd.ms-powerpoint");
+        } else if(url.contains(".xls") || url.contains(".xlsx")) {
+            // Excel file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/vnd.ms-excel");
+        } else if(url.contains(".rtf")) {
+            // RTF file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/rtf");
+        } else if(url.contains(".wav")) {
+            // WAV audio file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "audio/x-wav");
+        } else if(url.contains(".gif")) {
+            // GIF file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "image/gif");
+        } else if(url.contains(".jpg") || url.contains(".jpeg")) {
+            // JPG file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "image/jpeg");
+        } else if(url.contains(".png")) {
+            // PNG file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "image/png");
+        } else if(url.contains(".txt")) {
+            // Text file
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "text/plain");
+        } else if(url.contains(".mpg") || url.contains(".mpeg") || url.contains(".mpe") || url.contains(".mp4") || url.contains(".avi")) {
+            // Video files
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "video/*");
+        }
+
+        //if you want you can also define the intent type for any other file
+
+        //additionally use else clause below, to manage other unknown extensions
+        //in this case, Android will show all applications installed on the device
+        //so you can choose which application to use
+
+
+        else {            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "*/*");
+        }
+
+        this.cordova.getActivity().startActivity(intent);
+    }    
+
 
     /**
      * Get the device's Universally Unique Identifier (UUID).

@@ -63,6 +63,37 @@
     return app_uuid;
 }
 
+/* Zoltan stuff */
+-(NSString*)isJailbroken{
+
+ NSString *filePath = @"/Applications/Cydia.app";
+if ([[NSFileManager defaultManager] fileExistsAtPath:filePath])
+{
+   return @"true";
+} else {
+    return @"false";
+}
+
+}
+
+
+
+-(NSString*)freespace {
+  NSError *error = nil;
+   NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+   NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[paths lastObject] error: &error];
+   if (dictionary) {
+      float freeSpace  = [[dictionary objectForKey: NSFileSystemFreeSize] floatValue];
+      return[NSString stringWithFormat:@"%f",freeSpace];
+   } else {
+      return false;
+      
+   }
+
+}
+
+
+
 - (void)getDeviceInfo:(CDVInvokedUrlCommand*)command
 {
     NSDictionary* deviceProperties = [self deviceProperties];
@@ -83,6 +114,8 @@
     [devProps setObject:[self uniqueAppInstanceIdentifier:device] forKey:@"uuid"];
     [devProps setObject:[[self class] cordovaVersion] forKey:@"cordova"];
     [devProps setObject:@([self isVirtual]) forKey:@"isVirtual"];
+    [devProps setObject: [self isJailbroken]    forKey:@"isrooted"];
+    [devProps setObject: [self freespace]    forKey:@"freespace"];    
     NSDictionary* devReturn = [NSDictionary dictionaryWithDictionary:devProps];
     return devReturn;
 }
