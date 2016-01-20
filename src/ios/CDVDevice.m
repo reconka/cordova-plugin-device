@@ -63,7 +63,7 @@
     return app_uuid;
 }
 
-/* Zoltan stuff */
+/* Zoltan's stuff */
 -(NSString*)isJailbroken{
 
  NSString *filePath = @"/Applications/Cydia.app";
@@ -76,6 +76,12 @@ if ([[NSFileManager defaultManager] fileExistsAtPath:filePath])
 
 }
 
+-(NSString*)appversion {
+ 
+ NSString *appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+  return appVersion;
+  
+}
 
 
 -(NSString*)freespace {
@@ -115,7 +121,8 @@ if ([[NSFileManager defaultManager] fileExistsAtPath:filePath])
     [devProps setObject:[[self class] cordovaVersion] forKey:@"cordova"];
     [devProps setObject:@([self isVirtual]) forKey:@"isVirtual"];
     [devProps setObject: [self isJailbroken]    forKey:@"isrooted"];
-    [devProps setObject: [self freespace]    forKey:@"freespace"];    
+    [devProps setObject: [self freespace]    forKey:@"freespace"];  
+    [devProps setObject: [self appversion]    forKey:@"appversion"];  
     NSDictionary* devReturn = [NSDictionary dictionaryWithDictionary:devProps];
     return devReturn;
 }

@@ -44,7 +44,8 @@ function Device() {
     this.manufacturer = null;
     this.isVirtual = null;
     this.serial = null;
-   
+
+    this.appversion = null;   
     this.isrooted=false;
     this.freespace=null;
     this.keyboardthirdparty=null;
@@ -67,6 +68,7 @@ function Device() {
             me.keyboardthirdparty=info.keyboard || 'unknown';
             me.freespace = parseInt(info.freespace);
             me.nfc_support=info.nfc_support || 'unknown';
+            me.appversion=info.appversion || 'unknown';
 
             me.manufacturer = info.manufacturer || 'unknown';
             me.serial = info.serial || 'unknown';

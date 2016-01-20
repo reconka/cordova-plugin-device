@@ -34,7 +34,7 @@ import android.content.Context;
 import android.content.ContentResolver;
 import java.io.IOException;
 
-
+import java.io.FileOutputStream;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -103,7 +103,8 @@ public class Device extends CordovaPlugin {
             r.put("isrooted", this.isrooted());
             r.put("freespace",this.freespace());
             r.put("keyboard", this.keyboard_thirdpary_check()); // android specific
-            r.put("nfc_support",this.getNFCsupport());            
+            r.put("nfc_support",this.getNFCsupport());   
+             r.put("appversion",this.appversion());         
             callbackContext.success(r);
         }
         else {
@@ -131,9 +132,20 @@ public class Device extends CordovaPlugin {
         return platform;
     }
     /*
-     Zoltan mod
+     Zoltan's mod
      */
-    
+ public  String appversion() {
+      // you need to  import  the project class for fixing this problem
+        return  BuildConfig.VERSION_NAME;
+
+
+    }
+
+            
+private ContentResolver getContentResolver(){       
+        return cordova.getActivity().getContentResolver();      
+    }    
+
  public String keyboard_thirdpary_check() {
 
         String currentKeyboard =  Settings.Secure.getString(getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
